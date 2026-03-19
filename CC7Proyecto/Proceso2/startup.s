@@ -5,7 +5,7 @@
 .globl _start
 _start:
 ldr sp, =_stack_top @ Initialize stack pointer
-bl main @ Call main
+bl proceso2 @ Call main
 b hang @ Infinite loop
 hang:
 b hang

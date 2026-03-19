@@ -1,5 +1,5 @@
 
-otros\proceso1.elf:     file format elf32-littlearm
+proceso1.elf:     file format elf32-littlearm
 
 
 Disassembly of section .text:

@@ -6,7 +6,5 @@ int proceso1(void) {
     for(int i=0;i<10;i++){
         PRINT("%d \n",i);
     }
-    
-    
   }
 }

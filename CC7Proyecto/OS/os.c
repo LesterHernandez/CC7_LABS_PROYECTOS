@@ -1,77 +1,111 @@
 
+#include "os.h"
 #include "stdio.h"
 #include "uart.h"
 
-// ================== PROTOTIPOS ==================
+// ================= PROTOTIPOS =================
 extern void enable_irq(void);
+extern void start_first_process(void);
+ 
 
-// ================== TIMER ==================
+// ================= PCB =================
+PCB p1, p2;
+PCB *current;
 
+// ================= PROCESOS =================
+extern int proceso1(void);
+extern int proceso2(void);
+
+// ================= INIT PROCESSES =================
+void init_processes() {
+
+    // -------- P1 --------
+    unsigned int *sp1 = (unsigned int *)P1_STACK_TOP;
+
+    *(--sp1) = (unsigned int)proceso1; // LR
+
+    for(int i = 12; i >= 0; i--) {
+        *(--sp1) = 0;
+    }
+
+    p1.sp = (unsigned int)sp1;
+
+    // -------- P2 --------
+    unsigned int *sp2 = (unsigned int *)P2_STACK_TOP;
+
+    *(--sp2) = (unsigned int)proceso2;
+
+    for(int i = 12; i >= 0; i--) {
+        *(--sp2) = 0;
+    }
+
+    p2.sp = (unsigned int)sp2;
+
+    current = &p1;
+}
+
+// ================= SCHEDULER =================
+PCB* next_process() {
+    if (current == &p1)
+        return &p2;
+    else
+        return &p1;
+}
+
+// ================= TIMER =================
 void timer_init(void) {
 
-    // 1. Activar clock del Timer2
+    // Activar clock Timer2
     PUT32(CM_PER_TIMER2_CLKCTRL, 0x2);
 
-    // 2. Configurar INTC (interrupciones)
-    PUT32(INTC_MIR_CLEAR2, 1 << 4);   // habilitar IRQ 68 (Timer2)
-    PUT32(INTC_ILR68, 0x0);           // prioridad 0
+    // Habilitar IRQ 68
+    PUT32(INTC_MIR_CLEAR2, 1 << 4);
+    PUT32(INTC_ILR68, 0x0);
 
-    // 3. Detener timer
+    // Detener timer
     PUT32(TCLR, 0x0);
 
-    // 4. Limpiar interrupciones pendientes
+    // Limpiar interrupciones
     PUT32(TISR, 0x7);
 
-    // 5. Configurar periodo (~2 segundos)
+    // Configurar periodo (~2s)
     PUT32(TLDR, 0xFE91CA00);
     PUT32(TCRR, 0xFE91CA00);
 
-    // 6. Habilitar interrupción por overflow
+    // Habilitar interrupción
     PUT32(TIER, 0x2);
 
-    // 7. Iniciar timer (auto-reload)
+    // Iniciar timer
     PUT32(TCLR, 0x3);
 
     PRINT("Timer inicializado\r\n");
 }
 
-// ================== HANDLER ==================
-
+// ================= IRQ HANDLER (C) =================
 void timer_irq_handler(void) {
 
-    // 1. Limpiar interrupción del timer
+    // Limpiar interrupción
     PUT32(TISR, 0x2);
 
-    // 2. Notificar al INTC
+    // Notificar INTC
     PUT32(INTC_CONTROL, 0x1);
 
-    // 3. DEBUG (luego lo quitarás)
-    PRINT("Tick\r\n");
-
-    // Aquí irá:
-    // - scheduler
-    // - context switch
+    // Cambiar proceso
+    current = next_process();
 }
 
-// ================== MAIN (KERNEL) ==================
-
+// ================= MAIN =================
 int main(void) {
 
     PRINT("OS iniciado\r\n");
 
-    // Inicializar timer
+    init_processes();
     timer_init();
-
-    // Habilitar interrupciones globales
     enable_irq();
+ 
+    start_first_process();
 
-    PRINT("Interrupciones habilitadas\r\n");
-
-    //  IMPORTANTE:
-    // El OS no hace nada más
-    while (1) {
-        // Idle loop
-    }
+    while(1); // nunca debería regresar
 
     return 0;
 }

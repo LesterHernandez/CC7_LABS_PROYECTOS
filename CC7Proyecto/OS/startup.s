@@ -18,13 +18,13 @@ vector_table:
 // ================= RESET =================
 _start:
 reset_handler:
-    ldr sp, =_stack_top      @ Inicializar stack
+    ldr sp, =_stack_top      @ Stack del OS
 
-    @ Configurar vector table (VBAR)
+    @ Configurar VBAR (Vector Base Address Register)
     ldr r0, =vector_table
     mcr p15, 0, r0, c12, c0, 0
 
-    @ Llamar a main del OS
+    @ Ir al kernel
     bl main
 
 hang:
@@ -37,15 +37,44 @@ prefetch_handler:  b hang
 data_handler:      b hang
 fiq_handler:       b hang
 
+// ================= VARIABLES EXTERNAS =================
+.extern current
+
 // ================= IRQ HANDLER =================
 irq_handler:
-    sub lr, lr, #4              @ Ajustar retorno
-    stmfd sp!, {r0-r12, lr}     @ Guardar contexto
+    sub lr, lr, #4
 
-    bl timer_irq_handler        @ C handler (aquí irá scheduler)
+    @ Guardar contexto actual en stack
+    stmfd sp!, {r0-r12, lr}
 
-    ldmfd sp!, {r0-r12, lr}     @ Restaurar contexto
-    subs pc, lr, #0             @ Return from IRQ
+    @ Guardar SP en PCB actual
+    ldr r0, =current
+    ldr r1, [r0]
+    str sp, [r1]
+
+    @ Llamar handler en C (scheduler)
+    bl timer_irq_handler
+
+    @ Cargar nuevo proceso
+    ldr r0, =current
+    ldr r1, [r0]
+    ldr sp, [r1]
+
+    @ Restaurar contexto del nuevo proceso
+    ldmfd sp!, {r0-r12, lr}
+
+    @ Retornar de IRQ
+    subs pc, lr, #4
+
+// ================= ARRANQUE PRIMER PROCESO =================
+.globl start_first_process
+start_first_process:
+    ldr r0, =current
+    ldr r1, [r0]
+    ldr sp, [r1]
+
+    ldmfd sp!, {r0-r12, lr}
+    mov pc, lr
 
 // ================= FUNCIONES BAJO NIVEL =================
 .globl PUT32
@@ -62,11 +91,11 @@ GET32:
 .globl enable_irq
 enable_irq:
     mrs r0, cpsr
-    bic r0, r0, #0x80   @ limpiar bit I
+    bic r0, r0, #0x80   @ limpiar bit I (habilitar IRQ)
     msr cpsr_c, r0
     bx lr
 
-// ================= STACK =================
+// ================= STACK DEL OS =================
 .section .bss
 .align 4
 _stack_bottom:

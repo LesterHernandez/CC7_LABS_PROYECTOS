@@ -1,16 +1,23 @@
 #include "uart.h"
-volatile unsigned int * const UART0 = (volatile unsigned int *)UART0_BASE;
+
+
+extern void PUT32(unsigned int address, unsigned int value);
+extern unsigned int GET32(unsigned int address);
 
 void uart_putc(char c) {
-    // Espera a que el THR esté vacío
-    while (!(UART0[UART_LSR/4] & UART_LSR_THRE));
-    UART0[UART_THR/4] = c;
+    // Espera a que el THR esté vacío leyendo directamente de la memoria
+    while (!(GET32(UART_LSR) & UART_LSR_THRE));
+    
+    // Escribe el caracter de forma segura
+    PUT32(UART_THR, c);
 }
 
 char uart_getc(void) {
     // Espera a que haya datos
-    while (!(UART0[UART_LSR/4] & UART_LSR_DR));
-    return (char)(UART0[UART_RHR/4] & 0xFF);
+    while (!(GET32(UART_LSR) & UART_LSR_DR));
+    
+    // Lee el caracter
+    return (char)(GET32(UART_RHR) & 0xFF);
 }
 
 // Función para enviar una cadena por UART

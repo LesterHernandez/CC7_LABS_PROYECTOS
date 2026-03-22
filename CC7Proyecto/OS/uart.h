@@ -10,6 +10,8 @@
 // Direccion base del modulo UART0
 #define UART0_BASE     0x44E09000
 #define UART_THR       (UART0_BASE + 0x00)  // Registro de transmision
+#define UART_RHR 0x00 // Registro de recepcion (Read Holding Register)
+
 #define UART_LSR       (UART0_BASE + 0x14)  // Registro de estado
 #define UART_LSR_THRE  0x20                 // Bit: Transmit Holding Register Empty
 #define UART_LSR_RXFE  0x10                 // Bit: Receive FIFO Empty
@@ -31,6 +33,8 @@
 // Direccion base del modulo de control de reloj
 #define CM_PER_BASE      0x44E00000
 #define CM_PER_TIMER2_CLKCTRL (CM_PER_BASE + 0x80)  // Control de reloj para Timer2
+
+
 
  
 

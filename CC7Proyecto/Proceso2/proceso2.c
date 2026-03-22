@@ -1,12 +1,12 @@
-
 #include "stdio.h"
 
-int proceso2(void) {
-  while (1) {
-    for(char c = 'a'; c <= 'z'; c++){
-        PRINT("%c\n", c);
+void proceso2(void) {
+    int n = 0;
+    while(1) {
+        PRINT("%d\n", n);
+        n++;
+        if(n > 9) n = 0;
+        
+        for(volatile int i = 0; i < 100000; i++); 
     }
-    
-    
-  }
 }

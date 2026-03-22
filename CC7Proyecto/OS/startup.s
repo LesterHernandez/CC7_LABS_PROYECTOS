@@ -1,10 +1,11 @@
-.section .text
+.section .vectors, "ax"    @ <-- "a" = Allocatable , "x" = Executable
 .syntax unified
 .code 32
 .globl _start
 
 // ================= VECTOR TABLE =================
 .align 5
+_start:
 vector_table:
     b reset_handler
     b undefined_handler
@@ -16,15 +17,24 @@ vector_table:
     b fiq_handler
 
 // ================= RESET =================
-_start:
+.section .text             @ <-- Regresamos a la sección de texto normal
 reset_handler:
-    ldr sp, =_stack_top      @ Stack del OS
+    ldr sp, =_stack_top    @ Configurar Stack principal
 
     @ Configurar VBAR (Vector Base Address Register)
     ldr r0, =vector_table
     mcr p15, 0, r0, c12, c0, 0
 
-    @ Ir al kernel
+    @ Limpiar seccion BSS (Variables globales sin inicializar)
+    ldr r0, =__bss_start__
+    ldr r1, =__bss_end__
+    mov r2, #0
+clear_bss:
+    cmp r0, r1
+    strlt r2, [r0], #4
+    blt clear_bss
+
+    @ Ir al kernel en C
     bl main
 
 hang:
@@ -38,43 +48,23 @@ data_handler:      b hang
 fiq_handler:       b hang
 
 // ================= VARIABLES EXTERNAS =================
-.extern current
+.extern procesos
 
 // ================= IRQ HANDLER =================
 irq_handler:
-    sub lr, lr, #4
-
-    @ Guardar contexto actual en stack
-    stmfd sp!, {r0-r12, lr}
-
-    @ Guardar SP en PCB actual
-    ldr r0, =current
-    ldr r1, [r0]
-    str sp, [r1]
-
-    @ Llamar handler en C (scheduler)
-    bl timer_irq_handler
-
-    @ Cargar nuevo proceso
-    ldr r0, =current
-    ldr r1, [r0]
-    ldr sp, [r1]
-
-    @ Restaurar contexto del nuevo proceso
-    ldmfd sp!, {r0-r12, lr}
-
-    @ Retornar de IRQ
-    subs pc, lr, #4
+    sub lr, lr, #4              @ Ajustar LR para retornar a la instrucción correcta
+    b timer_irq_handler         @ Saltar al Context Switch en C
 
 // ================= ARRANQUE PRIMER PROCESO =================
 .globl start_first_process
 start_first_process:
-    ldr r0, =current
-    ldr r1, [r0]
-    ldr sp, [r1]
+    ldr r0, =procesos           @ r0 = dirección base del arreglo procesos
+    ldr sp, [r0]                @ Cargar el SP del primer proceso (procesos[0].sp)
 
-    ldmfd sp!, {r0-r12, lr}
-    mov pc, lr
+    @ Restaurar contexto inicial para arrancar el proceso
+    ldmfd sp!, {r0}             
+    msr spsr_cxsf, r0           
+    ldmfd sp!, {r0-r12, pc}^    
 
 // ================= FUNCIONES BAJO NIVEL =================
 .globl PUT32
@@ -83,7 +73,7 @@ PUT32:
     bx lr
 
 .globl GET32
-GET32:
+GET32:                          @ <--- Aquí faltaban los dos puntos
     ldr r0, [r0]
     bx lr
 

@@ -1,4 +1,4 @@
-#include "stdio.h"
+#include "print.h"
 
 void proceso2(void) {
     int n = 0;
@@ -7,6 +7,6 @@ void proceso2(void) {
         n++;
         if(n > 9) n = 0;
         
-        for(volatile int i = 0; i < 100000; i++); 
+        for(volatile int i = 0; i < 5000000; i++); 
     }
 }

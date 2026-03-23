@@ -1,4 +1,4 @@
-#include "stdio.h" // Asegúrate de incluir tus headers del OS
+#include "print.h" // Asegúrate de incluir tus headers del OS
 
 void proceso1(void) {
     char c = 'a';
@@ -9,6 +9,6 @@ void proceso1(void) {
         
         // Un pequeño retardo manual (delay) puede ser útil aquí 
         // para no saturar la UART antes de que el timer actúe.
-        for(volatile int i = 0; i < 100000; i++); 
+        for(volatile int i = 0; i < 5000000; i++); 
     }
 }

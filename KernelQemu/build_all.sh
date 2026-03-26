@@ -1,38 +1,44 @@
 #!/bin/bash
 
 echo "==================================================="
-echo "   Iniciando compilación para QEMU (vexpress-a9)"
+echo "   Iniciando compilación unificada del Proyecto"
 echo "==================================================="
 
-echo "-> Ensamblando startup.s..."
-arm-none-eabi-as -mcpu=cortex-a9 startup.s -o startup.o
+# 1. Compilar los procesos a código objeto (.o) sin enlazarlos
+echo "-> Compilando Proceso 1..."
+arm-none-eabi-gcc -c Proceso1/proceso1.c -o Proceso1/proceso1.o -I OS/
 
-echo "-> Compilando todos los archivos C..."
-for file in *.c; do
-    arm-none-eabi-gcc -mcpu=cortex-a9 -c "$file" -O0 -ffreestanding
-done
+echo "-> Compilando Proceso 2..."
+arm-none-eabi-gcc -c Proceso2/proceso2.c -o Proceso2/proceso2.o -I OS/
 
-# Buscar la librería de GCC
+# 2. Compilar el OS y unir todo
+echo "-> Compilando Sistema Operativo y unificando..."
+cd OS
+
+# Ensamblar startup
+arm-none-eabi-as startup.s -o startup.o
+
+# Compilar código fuente del OS
+arm-none-eabi-gcc -c os.c -o os.o
+arm-none-eabi-gcc -c stdio.c -o stdio.o
+arm-none-eabi-gcc -c string.c -o string.o
+arm-none-eabi-gcc -c uart.c -o uart.o
+
+# --- LO NUEVO EMPIEZA AQUÍ ---
+
+# Buscar la librería de GCC para las matemáticas con decimales
 LIBGCC=$(arm-none-eabi-gcc -print-libgcc-file-name)
 
-echo "-> Enlazando todo en os.elf..."
-# CORRECCIÓN: Usamos solo *.o para evitar duplicar startup.o
-arm-none-eabi-ld -T memmap.ld *.o $LIBGCC -o os.elf
+# ENLAZAR TODO JUNTO agregando $LIBGCC al final del comando
+arm-none-eabi-ld -T memmap.ld startup.o os.o stdio.o string.o uart.o ../Proceso1/proceso1.o ../Proceso2/proceso2.o $LIBGCC -o os.elf
 
-# Validar si el linker falló
-if [ $? -ne 0 ]; then
-    echo ""
-    echo " Error al enlazar los archivos. Revisa los mensajes arriba."
-    exit 1
-fi
+# --- LO NUEVO TERMINA AQUÍ ---
 
+# Convertir a binario puro
+arm-none-eabi-objcopy -O binary os.elf os.bin
+
+cd ..
 echo ""
 echo "==================================================="
-echo " ¡Compilación exitosa! Archivo generado: os.elf "
+echo " ¡Compilación exitosa! Archivo generado: OS/os.bin "
 echo "==================================================="
-
-echo "-> Iniciando QEMU..."
-echo "-> (Para salir presiona: Ctrl+A, suelta, y luego presiona X)"
-echo "==================================================="
-
-qemu-system-arm -M vexpress-a9 -m 128M -kernel os.elf -nographic

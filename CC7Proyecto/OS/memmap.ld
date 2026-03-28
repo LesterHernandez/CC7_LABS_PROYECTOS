@@ -14,7 +14,14 @@ SECTIONS
   .os_text : {
     KEEP(*(.vectors))      /* La tabla de interrupciones DEBE ir aquí al inicio */
     *os.o(.text*)          /* Todo el código C y ASM del OS */
-    *startup.o(.text*)
+    /* Startup ASM */
+    *vector.o(.text*)
+    *reset.o(.text*)
+    *exceptions.o(.text*)
+    *stack.o(.text*)
+    *process_start.o(.text*)
+    *irq_h.o(.text*)
+    *low_level.o(.text*)
     *stdio.o(.text*)
     *string.o(.text*)
     *uart.o(.text*)

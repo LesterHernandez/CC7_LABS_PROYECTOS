@@ -7,6 +7,6 @@ void proceso2(void) {
         n++;
         if(n > 9) n = 0;
         
-        for(volatile int i = 0; i < 5000000; i++); 
+        for(volatile int i = 0; i < 10000000; i++); 
     }
 }

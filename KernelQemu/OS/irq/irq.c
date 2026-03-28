@@ -11,7 +11,7 @@ void timer_init(void) {
 
     // -------- Configurar TIMER (SP804) --------
     PUT32(TIMER_CTRL, 0x0);           // Desactivar timer
-    PUT32(TIMER_LOAD, 1000000);       // Valor de carga (ajusta velocidad)
+    PUT32(TIMER_LOAD, 50000);       // Valor de carga (ajusta velocidad)
     PUT32(TIMER_INTCLR, 1);           // Limpiar interrupción
 
     // Timer: periodic, enable interrupt, 32-bit, enable

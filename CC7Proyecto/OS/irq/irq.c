@@ -22,8 +22,8 @@ void timer_init(void) {
     PUT32(TISR, 0x7);
 
     // Configurar periodo
-    PUT32(TLDR, 0xFE91CA00);
-    PUT32(TCRR, 0xFE91CA00);
+    PUT32(TLDR, 0xFFFFC000);
+    PUT32(TCRR, 0xFFFFC000);
 
     // Habilitar interrupcion de overflow
     PUT32(TIER, 0x2);

@@ -8,9 +8,9 @@ REM ====== CREATE FOLDERS ======
 if not exist bin mkdir bin
 if not exist Otros mkdir Otros
 
-REM ====== INCLUDE PATHS ====== 
-SET INCLUDES=-I OS -I OS\irq -I OS\kernel -I OS\Librerias -I OS\uart -I OS\scheduler -I OS\pcb -I OS\process -I OS\uart\uart_hw -I OS\uart\uart_conv -I OS\uart\uart_in -I OS\uart\uart_out
- 
+REM ====== INCLUDE PATHS ======
+SET INCLUDES=-I OS -I OS\irq -I OS\kernel -I OS\Librerias -I OS\uart
+
 REM ====== BUILD PROCESSES ======
 arm-none-eabi-gcc -c Proceso1\proceso1.c -o Otros\proceso1.o %INCLUDES%
 IF %ERRORLEVEL% NEQ 0 GOTO error
@@ -18,18 +18,8 @@ IF %ERRORLEVEL% NEQ 0 GOTO error
 arm-none-eabi-gcc -c Proceso2\proceso2.c -o Otros\proceso2.o %INCLUDES%
 IF %ERRORLEVEL% NEQ 0 GOTO error
 
-REM ====== BUILD ASSEMBLER ======
-arm-none-eabi-as OS\irq\low_level.s -o Otros\low_level.o
-IF %ERRORLEVEL% NEQ 0 GOTO error
-arm-none-eabi-as OS\startup\vector.s -o Otros\vector.o
-IF %ERRORLEVEL% NEQ 0 GOTO error
-arm-none-eabi-as OS\startup\reset.s -o Otros\reset.o
-IF %ERRORLEVEL% NEQ 0 GOTO error
-arm-none-eabi-as OS\startup\exceptions.s -o Otros\exceptions.o
-IF %ERRORLEVEL% NEQ 0 GOTO error
-arm-none-eabi-as OS\process\process_start.s -o Otros\process_start.o
-IF %ERRORLEVEL% NEQ 0 GOTO error
-arm-none-eabi-as OS\irq\irq_h.s -o Otros\irq_h.o
+REM ====== BUILD STARTUP ======
+arm-none-eabi-as OS\startup\startup.s -o Otros\startup.o
 IF %ERRORLEVEL% NEQ 0 GOTO error
 
 REM ====== BUILD IRQ ======
@@ -40,10 +30,10 @@ REM ====== BUILD KERNEL ======
 arm-none-eabi-gcc -c OS\kernel\kernel.c -o Otros\kernel.o %INCLUDES%
 IF %ERRORLEVEL% NEQ 0 GOTO error
 
-arm-none-eabi-gcc -c OS\process\process.c -o Otros\process.o %INCLUDES%
+arm-none-eabi-gcc -c OS\kernel\process.c -o Otros\process.o %INCLUDES%
 IF %ERRORLEVEL% NEQ 0 GOTO error
 
-arm-none-eabi-gcc -c OS\scheduler\scheduler.c -o Otros\scheduler.o %INCLUDES%
+arm-none-eabi-gcc -c OS\kernel\scheduler.c -o Otros\scheduler.o %INCLUDES%
 IF %ERRORLEVEL% NEQ 0 GOTO error
 
 REM ====== LIBRARIES ======
@@ -57,16 +47,16 @@ arm-none-eabi-gcc -c OS\Librerias\string.c -o Otros\string.o %INCLUDES%
 IF %ERRORLEVEL% NEQ 0 GOTO error
 
 REM ====== UART ======
-arm-none-eabi-gcc -c OS\uart\uart_hw\uart_hw.c -o Otros\uart_hw.o %INCLUDES%
+arm-none-eabi-gcc -c OS\uart\uart_hw.c -o Otros\uart_hw.o %INCLUDES%
 IF %ERRORLEVEL% NEQ 0 GOTO error
 
-arm-none-eabi-gcc -c OS\uart\uart_in\uart_in.c -o Otros\uart_in.o %INCLUDES%
+arm-none-eabi-gcc -c OS\uart\uart_in.c -o Otros\uart_in.o %INCLUDES%
 IF %ERRORLEVEL% NEQ 0 GOTO error
 
-arm-none-eabi-gcc -c OS\uart\uart_out\uart_out.c -o Otros\uart_out.o %INCLUDES%
+arm-none-eabi-gcc -c OS\uart\uart_out.c -o Otros\uart_out.o %INCLUDES%
 IF %ERRORLEVEL% NEQ 0 GOTO error
 
-arm-none-eabi-gcc -c OS\uart\uart_conv\uart_conv.c -o Otros\uart_conv.o %INCLUDES%
+arm-none-eabi-gcc -c OS\uart\uart_conv.c -o Otros\uart_conv.o %INCLUDES%
 IF %ERRORLEVEL% NEQ 0 GOTO error
 
 REM ====== LIBGCC ======
@@ -74,7 +64,7 @@ FOR /F "delims=" %%i IN ('arm-none-eabi-gcc -print-libgcc-file-name') DO SET LIB
 
 REM ====== LINK ======
 arm-none-eabi-ld -T OS\memmap.ld ^
-otros\irq_h.o otros\low_level.o otros\process_start.o otros\exceptions.o otros\reset.o otros\vector.o Otros\irq.o Otros\kernel.o Otros\process.o Otros\scheduler.o ^
+Otros\startup.o Otros\irq.o Otros\kernel.o Otros\process.o Otros\scheduler.o ^
 Otros\print.o Otros\read.o Otros\string.o ^
 Otros\uart_hw.o Otros\uart_in.o Otros\uart_out.o Otros\uart_conv.o ^
 Otros\proceso1.o Otros\proceso2.o "%LIBGCC%" -o Otros\os.elf

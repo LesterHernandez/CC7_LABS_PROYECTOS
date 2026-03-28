@@ -9,6 +9,6 @@ void proceso1(void) {
         
         // Un pequeño retardo manual (delay) puede ser útil aquí 
         // para no saturar la UART antes de que el timer actúe.
-        for(volatile int i = 0; i < 5000000; i++); 
+        for(volatile int i = 0; i < 10000000; i++); 
     }
 }
